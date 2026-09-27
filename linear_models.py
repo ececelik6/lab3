@@ -100,9 +100,8 @@ def train_logistic_classifier(data: ClassificationInput) -> ClassificationResult
 
 
 def compare_classical_models(data: ClassificationInput) -> BaselineComparisonResult:
-    """Сравните Logistic Regression, Decision Tree и KNN на одном split."""
+    """Сравните собственную Logistic Regression, Decision Tree и KNN на одном split."""
 
-    from sklearn.linear_model import LogisticRegression
     from sklearn.tree import DecisionTreeClassifier
     from sklearn.neighbors import KNeighborsClassifier
     from sklearn.metrics import (
@@ -118,33 +117,55 @@ def compare_classical_models(data: ClassificationInput) -> BaselineComparisonRes
     X_test = np.asarray(data.test_features, dtype=float)
     y_test = np.asarray(data.test_target, dtype=int).reshape(-1)
 
-    def calculate_metrics(model) -> ClassificationMetrics:
-        model.fit(X_train, y_train)
-
-        probabilities = model.predict_proba(X_test)[:, 1]
-        predictions = model.predict(X_test)
-
+    def calculate_metrics(probabilities, predictions) -> ClassificationMetrics:
         return ClassificationMetrics(
             roc_auc=float(roc_auc_score(y_test, probabilities)),
             accuracy=float(accuracy_score(y_test, predictions)),
-            precision=float(precision_score(y_test, predictions, zero_division=0)),
-            recall=float(recall_score(y_test, predictions, zero_division=0)),
-            f1=float(f1_score(y_test, predictions, zero_division=0)),
+            precision=float(
+                precision_score(y_test, predictions, zero_division=0)
+            ),
+            recall=float(
+                recall_score(y_test, predictions, zero_division=0)
+            ),
+            f1=float(
+                f1_score(y_test, predictions, zero_division=0)
+            ),
         )
 
-    logistic_regression = LogisticRegression(
-        max_iter=1000,
-        random_state=42,
+    # Собственная логистическая регрессия
+    own_logistic = train_logistic_classifier(data)
+
+    own_logistic_metrics = calculate_metrics(
+        own_logistic.probabilities,
+        own_logistic.predictions,
     )
 
-    decision_tree = DecisionTreeClassifier(
-        random_state=42,
+    # Decision Tree
+    decision_tree = DecisionTreeClassifier(random_state=42)
+    decision_tree.fit(X_train, y_train)
+
+    tree_probabilities = decision_tree.predict_proba(X_test)[:, 1]
+    tree_predictions = decision_tree.predict(X_test)
+
+    decision_tree_metrics = calculate_metrics(
+        tree_probabilities,
+        tree_predictions,
     )
 
+    # KNN
     knn = KNeighborsClassifier()
+    knn.fit(X_train, y_train)
+
+    knn_probabilities = knn.predict_proba(X_test)[:, 1]
+    knn_predictions = knn.predict(X_test)
+
+    knn_metrics = calculate_metrics(
+        knn_probabilities,
+        knn_predictions,
+    )
 
     return BaselineComparisonResult(
-        logistic_regression=calculate_metrics(logistic_regression),
-        decision_tree=calculate_metrics(decision_tree),
-        knn=calculate_metrics(knn),
+        logistic_regression=own_logistic_metrics,
+        decision_tree=decision_tree_metrics,
+        knn=knn_metrics,
     )
