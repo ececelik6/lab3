@@ -2,6 +2,7 @@ import pandas as pd
 
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
+from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import mean_squared_error
 
 from grader_contracts.linear_models import RegressionInput
@@ -146,6 +147,55 @@ print("Precision:", precision)
 print("Recall:", recall)
 print("F1:", f1)
 
+# --------------------------------------------------
+# Sklearn Logistic Regression for experiment_results.json
+# --------------------------------------------------
+
+sklearn_logistic = LogisticRegression(max_iter=1000)
+sklearn_logistic.fit(X_train_c_scaled, y_train_c)
+
+sklearn_probabilities = sklearn_logistic.predict_proba(
+    X_test_c_scaled
+)[:, 1]
+
+sklearn_predictions = sklearn_logistic.predict(
+    X_test_c_scaled
+)
+
+sklearn_roc_auc = roc_auc_score(
+    y_test_c,
+    sklearn_probabilities,
+)
+
+sklearn_accuracy = accuracy_score(
+    y_test_c,
+    sklearn_predictions,
+)
+
+sklearn_precision = precision_score(
+    y_test_c,
+    sklearn_predictions,
+    zero_division=0,
+)
+
+sklearn_recall = recall_score(
+    y_test_c,
+    sklearn_predictions,
+    zero_division=0,
+)
+
+sklearn_f1 = f1_score(
+    y_test_c,
+    sklearn_predictions,
+    zero_division=0,
+)
+
+print("\n--- Sklearn Logistic Regression ---")
+print("ROC-AUC:", sklearn_roc_auc)
+print("Accuracy:", sklearn_accuracy)
+print("Precision:", sklearn_precision)
+print("Recall:", sklearn_recall)
+print("F1:", sklearn_f1)
 
 from linear_models import compare_classical_models
 
